@@ -1,0 +1,31 @@
+{
+  "name": "code-share-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Monorepo for Code Share application",
+  "scripts": {
+    "dev": "pnpm --parallel --stream dev",
+    "dev:api": "pnpm --filter api dev",
+    "dev:client": "pnpm --filter client dev",
+    "build": "pnpm --filter api build && pnpm --filter client build",
+    "build:api": "pnpm --filter api build",
+    "build:client": "pnpm --filter client build",
+    "lint": "pnpm --filter client lint",
+    "format": "pnpm --filter api format",
+    "format:check": "pnpm --filter api format:check",
+    "clean": "pnpm -r exec rm -rf node_modules dist",
+    "install:all": "pnpm install"
+  },
+  "keywords": [
+    "monorepo",
+    "pnpm",
+    "workspace"
+  ],
+  "author": "",
+  "license": "ISC",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "devDependencies": {}
+}

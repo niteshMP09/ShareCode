@@ -6,10 +6,27 @@ A monorepo containing the Code Share application with both backend API and front
 
 ```
 .
-├── api/          # Express.js backend API
-├── client/       # React frontend application
-└── package.json  # Root workspace configuration
+├── api/                    # Express.js backend API
+│   └── src/
+│       ├── controllers/    # Request handlers
+│       ├── services/       # Business logic
+│       ├── routes/         # Route definitions
+│       ├── app.ts          # Express app configuration
+│       └── server.ts       # Server entry point
+├── client/                 # React frontend application
+│   └── src/
+└── package.json            # Root workspace configuration
 ```
+
+## API
+
+The API follows the MVC (Model-View-Controller) pattern:
+
+- **Routes**: Define endpoints and map them to controllers
+- **Controllers**: Handle HTTP requests and responses
+- **Services**: Contain business logic
+
+The API server runs on **port 8000** by default.
 
 ## Prerequisites
 
@@ -68,10 +85,10 @@ pnpm build:client
 # Lint the client
 pnpm lint
 
-# Format API code
+# Format code in both API and client
 pnpm format
 
-# Check API formatting
+# Check code formatting
 pnpm format:check
 
 # Clean all node_modules and build outputs

@@ -11,8 +11,8 @@
     "build:api": "pnpm --filter api build",
     "build:client": "pnpm --filter client build",
     "lint": "pnpm --filter client lint",
-    "format": "pnpm --filter api format",
-    "format:check": "pnpm --filter api format:check",
+    "format": "pnpm --parallel --filter '{api,client}' format",
+    "format:check": "pnpm --parallel --filter '{api,client}' format:check",
     "clean": "pnpm -r exec rm -rf node_modules dist",
     "install:all": "pnpm install"
   },

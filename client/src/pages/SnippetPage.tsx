@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
+import { useSocket } from '../hooks/useSocket';
 import type { Snippet } from '../types/snippet';
 
 export function SnippetPage() {
@@ -19,6 +20,29 @@ export function SnippetPage() {
   const [copied, setCopied] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
+  // Track whether local user is actively typing to avoid cursor disruption
+  const isTypingRef = useRef(false);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  // Debounce timer for emitting changes
+  const emitTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  // ── Real-time ──────────────────────────────────────────────────────────────
+  const { emitChange } = useSocket(id, ({ content, title }) => {
+    // Always update the view (non-edit) state
+    setSnippet((prev) =>
+      prev
+        ? { ...prev, content, ...(title !== undefined && { title }) }
+        : prev
+    );
+    // Only update edit fields if local user isn't currently typing
+    if (!isTypingRef.current) {
+      setEditContent(content);
+      if (title !== undefined) setEditTitle(title);
+    }
+  });
+
+  // ── Load snippet ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (!id) return;
     setLoading(true);
@@ -32,6 +56,38 @@ export function SnippetPage() {
       .catch(() => setError('Text not found.'))
       .finally(() => setLoading(false));
   }, [id]);
+
+  // ── Handlers ───────────────────────────────────────────────────────────────
+  const handleContentChange = useCallback(
+    (value: string) => {
+      setEditContent(value);
+
+      // Mark typing active for 1 s so remote updates don't overwrite cursor
+      isTypingRef.current = true;
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => {
+        isTypingRef.current = false;
+      }, 1000);
+
+      // Debounce emit by 250 ms
+      clearTimeout(emitTimeoutRef.current);
+      emitTimeoutRef.current = setTimeout(() => {
+        emitChange(value, editTitle);
+      }, 250);
+    },
+    [emitChange, editTitle]
+  );
+
+  const handleTitleChange = useCallback(
+    (value: string) => {
+      setEditTitle(value);
+      clearTimeout(emitTimeoutRef.current);
+      emitTimeoutRef.current = setTimeout(() => {
+        emitChange(editContent, value);
+      }, 250);
+    },
+    [emitChange, editContent]
+  );
 
   const handleCopyText = () => {
     if (!snippet) return;
@@ -80,6 +136,7 @@ export function SnippetPage() {
     setIsEditing(false);
   };
 
+  // ── Render ─────────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-56px)] bg-white">
@@ -110,7 +167,7 @@ export function SnippetPage() {
           <input
             type="text"
             value={editTitle}
-            onChange={(e) => setEditTitle(e.target.value)}
+            onChange={(e) => handleTitleChange(e.target.value)}
             className="w-full text-2xl font-semibold text-gray-800 outline-none"
           />
         ) : (
@@ -134,7 +191,7 @@ export function SnippetPage() {
         {isEditing ? (
           <textarea
             value={editContent}
-            onChange={(e) => setEditContent(e.target.value)}
+            onChange={(e) => handleContentChange(e.target.value)}
             className="w-full h-full px-8 py-5 text-gray-700 text-base leading-relaxed outline-none resize-none"
             autoFocus
           />

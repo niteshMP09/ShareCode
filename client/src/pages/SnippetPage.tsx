@@ -4,6 +4,13 @@ import { api } from '../services/api';
 import { useSocket } from '../hooks/useSocket';
 import type { Snippet } from '../types/snippet';
 
+function typingText(users: string[]): string {
+  if (users.length === 0) return '';
+  if (users.length === 1) return `${users[0]} is typing…`;
+  if (users.length === 2) return `${users[0]} and ${users[1]} are typing…`;
+  return `${users[0]}, ${users[1]} and others are typing…`;
+}
+
 export function SnippetPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -19,21 +26,21 @@ export function SnippetPage() {
   const [error, setError] = useState('');
   const [content, setContent] = useState('');
   const [connectedUsers, setConnectedUsers] = useState<string[]>([]);
-  const [copied, setCopied] = useState(false);
-  const [copiedLink, setCopiedLink] = useState(false);
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
 
   const isTypingRef = useRef(false);
-  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const typingStopRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const emitTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // ── Real-time ────────────────────────────────────────────────────────────
-  const { emitChange } = useSocket(
+  const { emitChange, emitTypingStart, emitTypingStop } = useSocket(
     id,
     name,
     ({ content: rc }) => {
       if (!isTypingRef.current) setContent(rc);
     },
-    (users) => setConnectedUsers(users)
+    (users) => setConnectedUsers(users),
+    (users) => setTypingUsers(users)
   );
 
   // ── Load ─────────────────────────────────────────────────────────────────
@@ -61,42 +68,28 @@ export function SnippetPage() {
   const handleContentChange = useCallback(
     (value: string) => {
       setContent(value);
-      isTypingRef.current = true;
-      clearTimeout(typingTimeoutRef.current);
-      typingTimeoutRef.current = setTimeout(() => {
+
+      // Typing indicator
+      if (!isTypingRef.current) {
+        isTypingRef.current = true;
+        emitTypingStart();
+      }
+      clearTimeout(typingStopRef.current);
+      typingStopRef.current = setTimeout(() => {
         isTypingRef.current = false;
-      }, 1000);
+        emitTypingStop();
+      }, 1500);
+
+      // Debounced content emit
       clearTimeout(emitTimeoutRef.current);
       emitTimeoutRef.current = setTimeout(() => {
         emitChange(value);
       }, 250);
     },
-    [emitChange]
+    [emitChange, emitTypingStart, emitTypingStop]
   );
 
-  const handleCopyText = () => {
-    navigator.clipboard.writeText(content);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2000);
-  };
-
-  const handleDuplicate = async () => {
-    const newId = Math.random().toString(36).slice(2, 8).toUpperCase();
-    try {
-      await api.createSnippet({ id: newId, content });
-      navigate(`/s/${newId}`, { state: { name } });
-    } catch {
-      // ignore
-    }
-  };
-
-  // ── Name prompt (opened via shared link) ─────────────────────────────────
+  // ── Name prompt ───────────────────────────────────────────────────────────
   if (showPrompt) {
     return (
       <div className="flex-1 flex items-center justify-center bg-gray-50 p-4">
@@ -157,33 +150,18 @@ export function SnippetPage() {
         className="flex-1 w-full px-8 py-5 text-gray-700 text-base leading-relaxed placeholder-gray-300 outline-none resize-none"
       />
 
-      <div className="flex items-center gap-2 px-8 py-3 border-t border-gray-100 bg-gray-50">
-        <button
-          onClick={handleCopyText}
-          className="px-4 py-1.5 text-sm text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors"
-        >
-          {copied ? 'Copied!' : 'Copy text'}
-        </button>
-        <button
-          onClick={handleCopyLink}
-          className="px-4 py-1.5 text-sm text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors"
-        >
-          {copiedLink ? 'Copied!' : 'Copy link'}
-        </button>
-        <button
-          onClick={handleDuplicate}
-          className="px-4 py-1.5 text-sm text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors"
-        >
-          Duplicate
-        </button>
+      {/* Status bar */}
+      <div className="flex items-center justify-between px-8 py-3 border-t border-gray-100 bg-gray-50 min-h-[48px]">
+        {/* Who is typing */}
+        <span className="text-xs text-gray-400 italic">
+          {typingText(typingUsers)}
+        </span>
 
         {/* Connected users */}
         {connectedUsers.length > 0 && (
-          <div className="ml-auto flex items-center gap-1.5">
-            <span className="inline-block w-2 h-2 rounded-full bg-green-400"></span>
-            <span className="text-xs text-gray-500">
-              {connectedUsers.join(', ')}
-            </span>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-green-400 inline-block" />
+            <span className="text-xs text-gray-500">{connectedUsers.join(', ')}</span>
           </div>
         )}
       </div>

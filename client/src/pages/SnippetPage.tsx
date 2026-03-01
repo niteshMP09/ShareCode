@@ -1,5 +1,4 @@
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          +import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { useSocket } from '../hooks/useSocket';
@@ -12,13 +11,10 @@ export function SnippetPage() {
   const [snippet, setSnippet] = useState<Snippet | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
   const [content, setContent] = useState('');
-
   const [copied, setCopied] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
-  // Prevent remote updates from disrupting the cursor while typing
   const isTypingRef = useRef(false);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const emitTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -101,7 +97,6 @@ export function SnippetPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-56px)] bg-white">
-      {/* Content — always editable */}
       <textarea
         value={content}
         onChange={(e) => handleContentChange(e.target.value)}
@@ -109,7 +104,6 @@ export function SnippetPage() {
         className="flex-1 w-full px-8 py-5 text-gray-700 text-base leading-relaxed placeholder-gray-300 outline-none resize-none"
       />
 
-      {/* Action bar */}
       <div className="flex items-center gap-2 px-8 py-3 border-t border-gray-100 bg-gray-50">
         <button
           onClick={handleCopyText}

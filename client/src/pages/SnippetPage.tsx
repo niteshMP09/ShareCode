@@ -1,4 +1,5 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          +import { useEffect, useRef, useCallback, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { useSocket } from '../hooks/useSocket';
@@ -12,7 +13,6 @@ export function SnippetPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
 
   const [copied, setCopied] = useState(false);
@@ -24,22 +24,19 @@ export function SnippetPage() {
   const emitTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // ── Real-time ────────────────────────────────────────────────────────────
-  const { emitChange } = useSocket(id, ({ content: rc, title: rt }) => {
+  const { emitChange } = useSocket(id, ({ content: rc }) => {
     if (!isTypingRef.current) {
       setContent(rc);
-      if (rt !== undefined) setTitle(rt);
     }
   });
 
   // ── Load ─────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!id) return;
-    setLoading(true);
     api
       .getSnippet(id)
       .then((s) => {
         setSnippet(s);
-        setTitle(s.title);
         setContent(s.content);
       })
       .catch(() => setError('Text not found.'))
@@ -47,16 +44,6 @@ export function SnippetPage() {
   }, [id]);
 
   // ── Handlers ─────────────────────────────────────────────────────────────
-  const scheduleEmit = useCallback(
-    (nextContent: string, nextTitle: string) => {
-      clearTimeout(emitTimeoutRef.current);
-      emitTimeoutRef.current = setTimeout(() => {
-        emitChange(nextContent, nextTitle);
-      }, 250);
-    },
-    [emitChange]
-  );
-
   const handleContentChange = useCallback(
     (value: string) => {
       setContent(value);
@@ -65,17 +52,12 @@ export function SnippetPage() {
       typingTimeoutRef.current = setTimeout(() => {
         isTypingRef.current = false;
       }, 1000);
-      scheduleEmit(value, title);
+      clearTimeout(emitTimeoutRef.current);
+      emitTimeoutRef.current = setTimeout(() => {
+        emitChange(value);
+      }, 250);
     },
-    [scheduleEmit, title]
-  );
-
-  const handleTitleChange = useCallback(
-    (value: string) => {
-      setTitle(value);
-      scheduleEmit(content, value);
-    },
-    [scheduleEmit, content]
+    [emitChange]
   );
 
   const handleCopyText = () => {
@@ -91,7 +73,7 @@ export function SnippetPage() {
   };
 
   const handleDuplicate = () => {
-    navigate('/', { state: { initialContent: content, initialTitle: `Copy of ${title}` } });
+    navigate('/', { state: { initialContent: content } });
   };
 
   // ── Render ───────────────────────────────────────────────────────────────
@@ -119,24 +101,6 @@ export function SnippetPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-56px)] bg-white">
-      {/* Title */}
-      <div className="px-8 pt-6 pb-3 border-b border-gray-100 flex items-center gap-4">
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => handleTitleChange(e.target.value)}
-          placeholder=""
-          className="flex-1 text-2xl font-semibold text-gray-800 placeholder-gray-300 outline-none min-w-0"
-        />
-        <span className="text-xs text-gray-400 shrink-0">
-          {new Date(snippet.createdAt).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-          })}
-        </span>
-      </div>
-
       {/* Content — always editable */}
       <textarea
         value={content}

@@ -5,7 +5,7 @@ import { SnippetPage } from './pages/SnippetPage';
 
 function App() {
   return (
-    <div className="flex flex-col h-screen bg-[#1e1e2e] overflow-hidden">
+    <div className="flex flex-col h-screen bg-white overflow-hidden">
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />

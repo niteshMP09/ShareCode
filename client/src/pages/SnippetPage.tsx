@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
-import { Editor } from '../components/Editor';
-import { LanguageSelector } from '../components/LanguageSelector';
 import type { Snippet } from '../types/snippet';
 
 export function SnippetPage() {
@@ -16,7 +14,6 @@ export function SnippetPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
-  const [editLanguage, setEditLanguage] = useState('');
   const [saving, setSaving] = useState(false);
 
   const [copied, setCopied] = useState(false);
@@ -31,13 +28,12 @@ export function SnippetPage() {
         setSnippet(s);
         setEditTitle(s.title);
         setEditContent(s.content);
-        setEditLanguage(s.language);
       })
-      .catch(() => setError('Snippet not found.'))
+      .catch(() => setError('Text not found.'))
       .finally(() => setLoading(false));
   }, [id]);
 
-  const handleCopyCode = () => {
+  const handleCopyText = () => {
     if (!snippet) return;
     navigator.clipboard.writeText(snippet.content);
     setCopied(true);
@@ -55,8 +51,7 @@ export function SnippetPage() {
     navigate('/', {
       state: {
         initialContent: snippet.content,
-        initialLanguage: snippet.language,
-        initialTitle: `Fork of ${snippet.title}`,
+        initialTitle: `Copy of ${snippet.title}`,
       },
     });
   };
@@ -68,12 +63,11 @@ export function SnippetPage() {
       const updated = await api.updateSnippet(id, {
         title: editTitle,
         content: editContent,
-        language: editLanguage,
       });
       setSnippet(updated);
       setIsEditing(false);
     } catch {
-      // noop — keep editing state open
+      // keep editing state open on failure
     } finally {
       setSaving(false);
     }
@@ -83,116 +77,123 @@ export function SnippetPage() {
     if (!snippet) return;
     setEditTitle(snippet.title);
     setEditContent(snippet.content);
-    setEditLanguage(snippet.language);
     setIsEditing(false);
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-56px)] bg-[#1e1e2e]">
-        <span className="text-gray-500 text-sm">Loading…</span>
+      <div className="flex items-center justify-center h-[calc(100vh-56px)] bg-white">
+        <span className="text-gray-400 text-sm">Loading…</span>
       </div>
     );
   }
 
   if (error || !snippet) {
     return (
-      <div className="flex flex-col items-center justify-center h-[calc(100vh-56px)] bg-[#1e1e2e] gap-4">
-        <p className="text-red-400">{error || 'Snippet not found.'}</p>
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-56px)] bg-white gap-4">
+        <p className="text-gray-500">{error || 'Text not found.'}</p>
         <button
           onClick={() => navigate('/')}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-md transition-colors"
+          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg transition-colors"
         >
-          Create New Snippet
+          Create New
         </button>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-56px)] bg-[#1e1e2e]">
-      {/* Toolbar */}
-      <div className="flex items-center gap-2 px-4 py-2 bg-[#181825] border-b border-[#313244] overflow-x-auto">
+    <div className="flex flex-col h-[calc(100vh-56px)] bg-white">
+      {/* Title area */}
+      <div className="px-8 pt-6 pb-3 border-b border-gray-100">
         {isEditing ? (
           <input
             type="text"
             value={editTitle}
             onChange={(e) => setEditTitle(e.target.value)}
-            className="flex-1 bg-transparent text-white outline-none text-sm min-w-0"
+            className="w-full text-2xl font-semibold text-gray-800 outline-none"
           />
         ) : (
-          <span className="flex-1 text-white text-sm font-medium truncate min-w-0">
-            {snippet.title}
-          </span>
-        )}
-
-        {isEditing ? (
-          <LanguageSelector value={editLanguage} onChange={setEditLanguage} />
-        ) : (
-          <span className="px-2 py-0.5 bg-[#313244] text-gray-400 text-xs rounded shrink-0">
-            {snippet.language}
-          </span>
-        )}
-
-        <span className="text-gray-600 text-xs hidden sm:block shrink-0">
-          {new Date(snippet.createdAt).toLocaleDateString()}
-        </span>
-
-        <button
-          onClick={handleCopyCode}
-          className="px-3 py-1.5 bg-[#313244] hover:bg-[#45475a] text-gray-200 text-xs rounded-md transition-colors shrink-0"
-        >
-          {copied ? 'Copied!' : 'Copy code'}
-        </button>
-
-        <button
-          onClick={handleCopyLink}
-          className="px-3 py-1.5 bg-[#313244] hover:bg-[#45475a] text-gray-200 text-xs rounded-md transition-colors shrink-0"
-        >
-          {copiedLink ? 'Copied!' : 'Copy link'}
-        </button>
-
-        <button
-          onClick={handleFork}
-          className="px-3 py-1.5 bg-[#313244] hover:bg-[#45475a] text-gray-200 text-xs rounded-md transition-colors shrink-0"
-        >
-          Fork
-        </button>
-
-        {isEditing ? (
-          <>
-            <button
-              onClick={handleCancelEdit}
-              className="px-3 py-1.5 bg-[#313244] hover:bg-[#45475a] text-gray-200 text-xs rounded-md transition-colors shrink-0"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="px-4 py-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-xs font-medium rounded-md transition-colors shrink-0"
-            >
-              {saving ? 'Saving…' : 'Save'}
-            </button>
-          </>
-        ) : (
-          <button
-            onClick={() => setIsEditing(true)}
-            className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md transition-colors shrink-0"
-          >
-            Edit
-          </button>
+          <div className="flex items-start justify-between gap-4">
+            <h1 className="text-2xl font-semibold text-gray-800">
+              {snippet.title || 'Untitled'}
+            </h1>
+            <span className="text-xs text-gray-400 mt-1.5 shrink-0">
+              {new Date(snippet.createdAt).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })}
+            </span>
+          </div>
         )}
       </div>
 
-      {/* Editor */}
-      <div className="flex-1 overflow-hidden">
-        <Editor
-          value={isEditing ? editContent : snippet.content}
-          onChange={setEditContent}
-          language={isEditing ? editLanguage : snippet.language}
-          readOnly={!isEditing}
-        />
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto">
+        {isEditing ? (
+          <textarea
+            value={editContent}
+            onChange={(e) => setEditContent(e.target.value)}
+            className="w-full h-full px-8 py-5 text-gray-700 text-base leading-relaxed outline-none resize-none"
+            autoFocus
+          />
+        ) : (
+          <div className="px-8 py-5 text-gray-700 text-base leading-relaxed whitespace-pre-wrap wrap-break-word">
+            {snippet.content}
+          </div>
+        )}
+      </div>
+
+      {/* Action bar */}
+      <div className="flex items-center justify-between px-8 py-3 border-t border-gray-100 bg-gray-50">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleCopyText}
+            className="px-4 py-1.5 text-sm text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors"
+          >
+            {copied ? 'Copied!' : 'Copy text'}
+          </button>
+          <button
+            onClick={handleCopyLink}
+            className="px-4 py-1.5 text-sm text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors"
+          >
+            {copiedLink ? 'Copied!' : 'Copy link'}
+          </button>
+          <button
+            onClick={handleFork}
+            className="px-4 py-1.5 text-sm text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors"
+          >
+            Duplicate
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {isEditing ? (
+            <>
+              <button
+                onClick={handleCancelEdit}
+                className="px-4 py-1.5 text-sm text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="px-5 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-medium rounded-lg transition-colors"
+              >
+                {saving ? 'Saving…' : 'Save'}
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setIsEditing(true)}
+              className="px-5 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors"
+            >
+              Edit
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -125,7 +125,7 @@ export function SnippetPage() {
           type="text"
           value={title}
           onChange={(e) => handleTitleChange(e.target.value)}
-          placeholder="Untitled"
+          placeholder=""
           className="flex-1 text-2xl font-semibold text-gray-800 placeholder-gray-300 outline-none min-w-0"
         />
         <span className="text-xs text-gray-400 shrink-0">

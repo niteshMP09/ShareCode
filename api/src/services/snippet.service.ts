@@ -9,9 +9,7 @@ export class SnippetService {
     const now = new Date().toISOString();
     const snippet: Snippet = {
       id,
-      title: data.title?.trim() || 'Untitled',
       content: data.content,
-      language: data.language || 'plaintext',
       createdAt: now,
       updatedAt: now,
     };
@@ -28,9 +26,7 @@ export class SnippetService {
     if (!snippet) return undefined;
     const updated: Snippet = {
       ...snippet,
-      ...(data.title !== undefined && { title: data.title.trim() || 'Untitled' }),
       ...(data.content !== undefined && { content: data.content }),
-      ...(data.language !== undefined && { language: data.language }),
       updatedAt: new Date().toISOString(),
     };
     store.set(id, updated);

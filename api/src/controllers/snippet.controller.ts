@@ -4,12 +4,12 @@ import { CreateSnippetDto, UpdateSnippetDto } from '../types/snippet';
 
 class SnippetController {
   create(req: Request, res: Response): void {
-    const { title, content, language } = req.body as CreateSnippetDto;
+    const { content } = req.body as CreateSnippetDto;
     if (!content || typeof content !== 'string' || !content.trim()) {
       res.status(400).json({ message: 'Content is required' });
       return;
     }
-    const snippet = SnippetService.create({ title, content, language });
+    const snippet = SnippetService.create({ content });
     res.status(201).json(snippet);
   }
 
@@ -25,8 +25,8 @@ class SnippetController {
 
   update(req: Request, res: Response): void {
     const { id } = req.params;
-    const { title, content, language } = req.body as UpdateSnippetDto;
-    const snippet = SnippetService.update(id, { title, content, language });
+    const { content } = req.body as UpdateSnippetDto;
+    const snippet = SnippetService.update(id, { content });
     if (!snippet) {
       res.status(404).json({ message: 'Snippet not found' });
       return;

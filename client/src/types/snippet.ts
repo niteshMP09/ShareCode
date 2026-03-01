@@ -6,7 +6,8 @@ export interface Snippet {
 }
 
 export interface CreateSnippetPayload {
-  content: string;
+  id?: string;
+  content?: string;
 }
 
 export interface UpdateSnippetPayload {

@@ -1,68 +1,173 @@
 import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 
-interface LocationState {
-  initialContent?: string;
-}
-
-function wordCount(text: string) {
-  return text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+function generateId() {
+  return Math.random().toString(36).slice(2, 8).toUpperCase();
 }
 
 export function Home() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const state = location.state as LocationState | null;
+  const [mode, setMode] = useState<'create' | 'join'>('create');
 
-  const [content, setContent] = useState(state?.initialContent ?? '');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  // Create form state
+  const [createName, setCreateName] = useState('');
+  const [roomId, setRoomId] = useState(generateId);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createError, setCreateError] = useState('');
 
-  const handleShare = async () => {
-    if (!content.trim()) {
-      setError('Write something before sharing.');
-      return;
-    }
-    setLoading(true);
-    setError('');
+  // Join form state
+  const [joinName, setJoinName] = useState('');
+  const [joinRoomId, setJoinRoomId] = useState('');
+  const [joinLoading, setJoinLoading] = useState(false);
+  const [joinError, setJoinError] = useState('');
+
+  const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!createName.trim()) { setCreateError('Enter your name.'); return; }
+    if (!roomId.trim()) { setCreateError('Enter a room ID.'); return; }
+    setCreateLoading(true);
+    setCreateError('');
     try {
-      const snippet = await api.createSnippet({ content });
-      navigate(`/s/${snippet.id}`);
-    } catch {
-      setError('Failed to share. Please try again.');
+      const snippet = await api.createSnippet({ id: roomId.trim() });
+      navigate(`/s/${snippet.id}`, { state: { name: createName.trim() } });
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : 'Failed to create room.');
     } finally {
-      setLoading(false);
+      setCreateLoading(false);
     }
   };
 
-  const words = wordCount(content);
-  const chars = content.length;
+  const handleJoin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!joinName.trim()) { setJoinError('Enter your name.'); return; }
+    if (!joinRoomId.trim()) { setJoinError('Enter a room ID.'); return; }
+    setJoinLoading(true);
+    setJoinError('');
+    try {
+      await api.getSnippet(joinRoomId.trim());
+      navigate(`/s/${joinRoomId.trim()}`, { state: { name: joinName.trim() } });
+    } catch {
+      setJoinError('Room not found. Check the ID and try again.');
+    } finally {
+      setJoinLoading(false);
+    }
+  };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-56px)] bg-white">
-      <textarea
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        placeholder="Start typing or paste your text here…"
-        className="flex-1 w-full px-8 py-5 text-gray-700 text-base leading-relaxed placeholder-gray-300 outline-none resize-none"
-        autoFocus
-      />
+    <div className="flex-1 flex items-center justify-center bg-gray-50 p-4">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 w-full max-w-md p-8">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-bold text-gray-900">Get started</h2>
+          <p className="text-gray-500 text-sm mt-1">Create a room or join an existing one</p>
+        </div>
 
-      <div className="flex items-center justify-between px-8 py-3 border-t border-gray-100 bg-gray-50">
-        <span className="text-xs text-gray-400">
-          {words} {words === 1 ? 'word' : 'words'} · {chars} {chars === 1 ? 'char' : 'chars'}
-        </span>
-        <div className="flex items-center gap-3">
-          {error && <span className="text-red-500 text-xs">{error}</span>}
+        {/* Tab toggle */}
+        <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-6">
           <button
-            onClick={handleShare}
-            disabled={loading}
-            className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+            onClick={() => setMode('create')}
+            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
+              mode === 'create'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
           >
-            {loading ? 'Sharing…' : 'Share'}
+            Create a Room
+          </button>
+          <button
+            onClick={() => setMode('join')}
+            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
+              mode === 'join'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Join a Room
           </button>
         </div>
+
+        {mode === 'create' ? (
+          <form onSubmit={handleCreate} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Your name
+              </label>
+              <input
+                type="text"
+                value={createName}
+                onChange={(e) => setCreateName(e.target.value)}
+                placeholder="e.g. Alice"
+                autoFocus
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Room ID
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={roomId}
+                  onChange={(e) => setRoomId(e.target.value.toUpperCase())}
+                  placeholder="e.g. BLUE42"
+                  className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-mono outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                />
+                <button
+                  type="button"
+                  onClick={() => setRoomId(generateId())}
+                  className="px-3 py-2 text-xs text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-xl transition whitespace-nowrap"
+                >
+                  Generate
+                </button>
+              </div>
+            </div>
+            {createError && <p className="text-red-500 text-xs">{createError}</p>}
+            <button
+              type="submit"
+              disabled={createLoading}
+              className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-colors"
+            >
+              {createLoading ? 'Creating…' : 'Create Room'}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleJoin} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Your name
+              </label>
+              <input
+                type="text"
+                value={joinName}
+                onChange={(e) => setJoinName(e.target.value)}
+                placeholder="e.g. Bob"
+                autoFocus
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Room ID
+              </label>
+              <input
+                type="text"
+                value={joinRoomId}
+                onChange={(e) => setJoinRoomId(e.target.value.toUpperCase())}
+                placeholder="e.g. BLUE42"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-mono outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+              />
+            </div>
+            {joinError && <p className="text-red-500 text-xs">{joinError}</p>}
+            <button
+              type="submit"
+              disabled={joinLoading}
+              className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-colors"
+            >
+              {joinLoading ? 'Joining…' : 'Join Room'}
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );

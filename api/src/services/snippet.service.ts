@@ -5,11 +5,14 @@ const store = new Map<string, Snippet>();
 
 export class SnippetService {
   static create(data: CreateSnippetDto): Snippet {
-    const id = randomUUID().replace(/-/g, '').slice(0, 10);
+    const id = data.id?.trim() || randomUUID().replace(/-/g, '').slice(0, 10);
+    if (store.has(id)) {
+      throw new Error('ROOM_EXISTS');
+    }
     const now = new Date().toISOString();
     const snippet: Snippet = {
       id,
-      content: data.content,
+      content: data.content ?? '',
       createdAt: now,
       updatedAt: now,
     };

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../services/api';
 import { useSocket } from '../hooks/useSocket';
 import type { Snippet } from '../types/snippet';
@@ -7,11 +7,18 @@ import type { Snippet } from '../types/snippet';
 export function SnippetPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const state = location.state as { name?: string } | null;
+
+  const [name, setName] = useState(state?.name ?? '');
+  const [nameInput, setNameInput] = useState('');
+  const [showPrompt, setShowPrompt] = useState(!state?.name);
 
   const [snippet, setSnippet] = useState<Snippet | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [content, setContent] = useState('');
+  const [connectedUsers, setConnectedUsers] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
@@ -20,11 +27,14 @@ export function SnippetPage() {
   const emitTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // ── Real-time ────────────────────────────────────────────────────────────
-  const { emitChange } = useSocket(id, ({ content: rc }) => {
-    if (!isTypingRef.current) {
-      setContent(rc);
-    }
-  });
+  const { emitChange } = useSocket(
+    id,
+    name,
+    ({ content: rc }) => {
+      if (!isTypingRef.current) setContent(rc);
+    },
+    (users) => setConnectedUsers(users)
+  );
 
   // ── Load ─────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -35,9 +45,17 @@ export function SnippetPage() {
         setSnippet(s);
         setContent(s.content);
       })
-      .catch(() => setError('Text not found.'))
+      .catch(() => setError('Room not found.'))
       .finally(() => setLoading(false));
   }, [id]);
+
+  // ── Name prompt submit ────────────────────────────────────────────────────
+  const handleNameSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!nameInput.trim()) return;
+    setName(nameInput.trim());
+    setShowPrompt(false);
+  };
 
   // ── Handlers ─────────────────────────────────────────────────────────────
   const handleContentChange = useCallback(
@@ -68,11 +86,45 @@ export function SnippetPage() {
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
-  const handleDuplicate = () => {
-    navigate('/', { state: { initialContent: content } });
+  const handleDuplicate = async () => {
+    const newId = Math.random().toString(36).slice(2, 8).toUpperCase();
+    try {
+      await api.createSnippet({ id: newId, content });
+      navigate(`/s/${newId}`, { state: { name } });
+    } catch {
+      // ignore
+    }
   };
 
-  // ── Render ───────────────────────────────────────────────────────────────
+  // ── Name prompt (opened via shared link) ─────────────────────────────────
+  if (showPrompt) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-gray-50 p-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 w-full max-w-sm p-8">
+          <h2 className="text-xl font-bold text-gray-900 mb-1">Join Room</h2>
+          <p className="text-gray-500 text-sm mb-6">Enter your name to start collaborating.</p>
+          <form onSubmit={handleNameSubmit} className="space-y-4">
+            <input
+              type="text"
+              value={nameInput}
+              onChange={(e) => setNameInput(e.target.value)}
+              placeholder="Your name"
+              autoFocus
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+            />
+            <button
+              type="submit"
+              className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-xl transition-colors"
+            >
+              Join
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Loading / error ───────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-56px)] bg-white">
@@ -84,17 +136,18 @@ export function SnippetPage() {
   if (error || !snippet) {
     return (
       <div className="flex flex-col items-center justify-center h-[calc(100vh-56px)] bg-white gap-4">
-        <p className="text-gray-500">{error || 'Text not found.'}</p>
+        <p className="text-gray-500">{error || 'Room not found.'}</p>
         <button
           onClick={() => navigate('/')}
           className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg transition-colors"
         >
-          Create New
+          Go Home
         </button>
       </div>
     );
   }
 
+  // ── Editor ────────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col h-[calc(100vh-56px)] bg-white">
       <textarea
@@ -123,6 +176,16 @@ export function SnippetPage() {
         >
           Duplicate
         </button>
+
+        {/* Connected users */}
+        {connectedUsers.length > 0 && (
+          <div className="ml-auto flex items-center gap-1.5">
+            <span className="inline-block w-2 h-2 rounded-full bg-green-400"></span>
+            <span className="text-xs text-gray-500">
+              {connectedUsers.join(', ')}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

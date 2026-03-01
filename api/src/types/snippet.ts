@@ -6,7 +6,8 @@ export interface Snippet {
 }
 
 export interface CreateSnippetDto {
-  content: string;
+  id?: string;
+  content?: string;
 }
 
 export interface UpdateSnippetDto {

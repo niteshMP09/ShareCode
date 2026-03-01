@@ -12,37 +12,26 @@ export function SnippetPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [editTitle, setEditTitle] = useState('');
-  const [editContent, setEditContent] = useState('');
-  const [saving, setSaving] = useState(false);
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
 
   const [copied, setCopied] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
-  // Track whether local user is actively typing to avoid cursor disruption
+  // Prevent remote updates from disrupting the cursor while typing
   const isTypingRef = useRef(false);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-  // Debounce timer for emitting changes
   const emitTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  // ── Real-time ──────────────────────────────────────────────────────────────
-  const { emitChange } = useSocket(id, ({ content, title }) => {
-    // Always update the view (non-edit) state
-    setSnippet((prev) =>
-      prev
-        ? { ...prev, content, ...(title !== undefined && { title }) }
-        : prev
-    );
-    // Only update edit fields if local user isn't currently typing
+  // ── Real-time ────────────────────────────────────────────────────────────
+  const { emitChange } = useSocket(id, ({ content: rc, title: rt }) => {
     if (!isTypingRef.current) {
-      setEditContent(content);
-      if (title !== undefined) setEditTitle(title);
+      setContent(rc);
+      if (rt !== undefined) setTitle(rt);
     }
   });
 
-  // ── Load snippet ───────────────────────────────────────────────────────────
+  // ── Load ─────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!id) return;
     setLoading(true);
@@ -50,48 +39,47 @@ export function SnippetPage() {
       .getSnippet(id)
       .then((s) => {
         setSnippet(s);
-        setEditTitle(s.title);
-        setEditContent(s.content);
+        setTitle(s.title);
+        setContent(s.content);
       })
       .catch(() => setError('Text not found.'))
       .finally(() => setLoading(false));
   }, [id]);
 
-  // ── Handlers ───────────────────────────────────────────────────────────────
+  // ── Handlers ─────────────────────────────────────────────────────────────
+  const scheduleEmit = useCallback(
+    (nextContent: string, nextTitle: string) => {
+      clearTimeout(emitTimeoutRef.current);
+      emitTimeoutRef.current = setTimeout(() => {
+        emitChange(nextContent, nextTitle);
+      }, 250);
+    },
+    [emitChange]
+  );
+
   const handleContentChange = useCallback(
     (value: string) => {
-      setEditContent(value);
-
-      // Mark typing active for 1 s so remote updates don't overwrite cursor
+      setContent(value);
       isTypingRef.current = true;
       clearTimeout(typingTimeoutRef.current);
       typingTimeoutRef.current = setTimeout(() => {
         isTypingRef.current = false;
       }, 1000);
-
-      // Debounce emit by 250 ms
-      clearTimeout(emitTimeoutRef.current);
-      emitTimeoutRef.current = setTimeout(() => {
-        emitChange(value, editTitle);
-      }, 250);
+      scheduleEmit(value, title);
     },
-    [emitChange, editTitle]
+    [scheduleEmit, title]
   );
 
   const handleTitleChange = useCallback(
     (value: string) => {
-      setEditTitle(value);
-      clearTimeout(emitTimeoutRef.current);
-      emitTimeoutRef.current = setTimeout(() => {
-        emitChange(editContent, value);
-      }, 250);
+      setTitle(value);
+      scheduleEmit(content, value);
     },
-    [emitChange, editContent]
+    [scheduleEmit, content]
   );
 
   const handleCopyText = () => {
-    if (!snippet) return;
-    navigator.clipboard.writeText(snippet.content);
+    navigator.clipboard.writeText(content);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -102,41 +90,11 @@ export function SnippetPage() {
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
-  const handleFork = () => {
-    if (!snippet) return;
-    navigate('/', {
-      state: {
-        initialContent: snippet.content,
-        initialTitle: `Copy of ${snippet.title}`,
-      },
-    });
+  const handleDuplicate = () => {
+    navigate('/', { state: { initialContent: content, initialTitle: `Copy of ${title}` } });
   };
 
-  const handleSave = async () => {
-    if (!id) return;
-    setSaving(true);
-    try {
-      const updated = await api.updateSnippet(id, {
-        title: editTitle,
-        content: editContent,
-      });
-      setSnippet(updated);
-      setIsEditing(false);
-    } catch {
-      // keep editing state open on failure
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleCancelEdit = () => {
-    if (!snippet) return;
-    setEditTitle(snippet.title);
-    setEditContent(snippet.content);
-    setIsEditing(false);
-  };
-
-  // ── Render ─────────────────────────────────────────────────────────────────
+  // ── Render ───────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-56px)] bg-white">
@@ -161,96 +119,52 @@ export function SnippetPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-56px)] bg-white">
-      {/* Title area */}
-      <div className="px-8 pt-6 pb-3 border-b border-gray-100">
-        {isEditing ? (
-          <input
-            type="text"
-            value={editTitle}
-            onChange={(e) => handleTitleChange(e.target.value)}
-            className="w-full text-2xl font-semibold text-gray-800 outline-none"
-          />
-        ) : (
-          <div className="flex items-start justify-between gap-4">
-            <h1 className="text-2xl font-semibold text-gray-800">
-              {snippet.title || 'Untitled'}
-            </h1>
-            <span className="text-xs text-gray-400 mt-1.5 shrink-0">
-              {new Date(snippet.createdAt).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
-            </span>
-          </div>
-        )}
+      {/* Title */}
+      <div className="px-8 pt-6 pb-3 border-b border-gray-100 flex items-center gap-4">
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => handleTitleChange(e.target.value)}
+          placeholder="Untitled"
+          className="flex-1 text-2xl font-semibold text-gray-800 placeholder-gray-300 outline-none min-w-0"
+        />
+        <span className="text-xs text-gray-400 shrink-0">
+          {new Date(snippet.createdAt).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          })}
+        </span>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto">
-        {isEditing ? (
-          <textarea
-            value={editContent}
-            onChange={(e) => handleContentChange(e.target.value)}
-            className="w-full h-full px-8 py-5 text-gray-700 text-base leading-relaxed outline-none resize-none"
-            autoFocus
-          />
-        ) : (
-          <div className="px-8 py-5 text-gray-700 text-base leading-relaxed whitespace-pre-wrap wrap-break-word">
-            {snippet.content}
-          </div>
-        )}
-      </div>
+      {/* Content — always editable */}
+      <textarea
+        value={content}
+        onChange={(e) => handleContentChange(e.target.value)}
+        placeholder="Start typing…"
+        className="flex-1 w-full px-8 py-5 text-gray-700 text-base leading-relaxed placeholder-gray-300 outline-none resize-none"
+      />
 
       {/* Action bar */}
-      <div className="flex items-center justify-between px-8 py-3 border-t border-gray-100 bg-gray-50">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleCopyText}
-            className="px-4 py-1.5 text-sm text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors"
-          >
-            {copied ? 'Copied!' : 'Copy text'}
-          </button>
-          <button
-            onClick={handleCopyLink}
-            className="px-4 py-1.5 text-sm text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors"
-          >
-            {copiedLink ? 'Copied!' : 'Copy link'}
-          </button>
-          <button
-            onClick={handleFork}
-            className="px-4 py-1.5 text-sm text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors"
-          >
-            Duplicate
-          </button>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {isEditing ? (
-            <>
-              <button
-                onClick={handleCancelEdit}
-                className="px-4 py-1.5 text-sm text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="px-5 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-medium rounded-lg transition-colors"
-              >
-                {saving ? 'Saving…' : 'Save'}
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="px-5 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors"
-            >
-              Edit
-            </button>
-          )}
-        </div>
+      <div className="flex items-center gap-2 px-8 py-3 border-t border-gray-100 bg-gray-50">
+        <button
+          onClick={handleCopyText}
+          className="px-4 py-1.5 text-sm text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors"
+        >
+          {copied ? 'Copied!' : 'Copy text'}
+        </button>
+        <button
+          onClick={handleCopyLink}
+          className="px-4 py-1.5 text-sm text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors"
+        >
+          {copiedLink ? 'Copied!' : 'Copy link'}
+        </button>
+        <button
+          onClick={handleDuplicate}
+          className="px-4 py-1.5 text-sm text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors"
+        >
+          Duplicate
+        </button>
       </div>
     </div>
   );

@@ -6,3 +6,4 @@ export { CreateRoom } from './CreateRoom';
 export { JoinRoom } from './JoinRoom';
 export { LoadingState } from './LoadingState';
 export { EmptyState } from './EmptyState';
+export { NamePrompt } from './NamePrompt';

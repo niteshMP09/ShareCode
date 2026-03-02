@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import type { Snippet } from '@/types/snippet';
-import { LoadingState, EmptyState, Button } from '@/components';
+import { LoadingState, EmptyState, NamePrompt } from '@/components';
 import { useSocket } from '@/hooks';
 import { snippetService } from '@/services';
 
@@ -90,31 +90,13 @@ export function SnippetPage() {
     [emitChange, emitTypingStart, emitTypingStop]
   );
 
-  // ── Name prompt ───────────────────────────────────────────────────────────
   if (showPrompt) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-gray-50 p-4">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 w-full max-w-sm p-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-1">Join Room</h2>
-          <p className="text-gray-500 text-sm mb-6">Enter your name to start collaborating.</p>
-          <form onSubmit={handleNameSubmit} className="space-y-4">
-            <input
-              type="text"
-              value={nameInput}
-              onChange={(e) => setNameInput(e.target.value)}
-              placeholder="Your name"
-              autoFocus
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-            />
-            <Button
-              type="submit"
-              className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-xl transition-colors"
-            >
-              Join
-            </Button>
-          </form>
-        </div>
-      </div>
+      <NamePrompt
+        name={nameInput}
+        onNameChange={setNameInput}
+        onSubmit={handleNameSubmit}
+      />
     );
   }
 
@@ -133,7 +115,6 @@ export function SnippetPage() {
     );
   }
 
-  // ── Editor ────────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col h-[calc(100vh-56px)] bg-white">
       <textarea
@@ -142,15 +123,10 @@ export function SnippetPage() {
         placeholder="Start typing…"
         className="flex-1 w-full px-8 py-5 text-gray-700 text-base leading-relaxed placeholder-gray-300 outline-none resize-none"
       />
-
-      {/* Status bar */}
-      <div className="flex items-center justify-between px-8 py-3 border-t border-gray-100 bg-gray-50 min-h-[48px]">
-        {/* Who is typing */}
+      <div className="flex items-center justify-between px-8 py-3 border-t border-gray-100 bg-gray-50 min-h-12">
         <span className="text-xs text-gray-400 italic">
           {typingText(typingUsers)}
         </span>
-
-        {/* Connected users */}
         {connectedUsers.length > 0 && (
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-green-400 inline-block" />

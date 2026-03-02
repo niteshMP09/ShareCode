@@ -124,8 +124,16 @@ pnpm --filter <workspace-name> <script-name>
 pnpm -r <script-name>
 ```
 
+## Environment
+
+Create environment files as needed:
+
+- **API**: api/.env
+	- PORT=8000
+	- NODE_ENV=development
+- **Client**: client/.env
+	- VITE_API_BASE_URL=http://localhost:8000
+
 ## Learn More
 
 - [pnpm Workspace Documentation](https://pnpm.io/workspaces)
-- [API README](./api/README.md)
-- [Client README](./client/README.md)

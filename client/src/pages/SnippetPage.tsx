@@ -1,8 +1,8 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { api } from '../services/api';
 import { useSocket } from '../hooks/useSocket';
 import type { Snippet } from '../types/snippet';
+import { snippetService } from '../services/snippetService';
 
 function typingText(users: string[]): string {
   if (users.length === 0) return '';
@@ -46,7 +46,7 @@ export function SnippetPage() {
   // ── Load ─────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!id) return;
-    api
+    snippetService
       .getSnippet(id)
       .then((s) => {
         setSnippet(s);

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '../services/api';
+import { snippetService } from '../services/snippetService';
 
 function generateId() {
   return Math.random().toString(36).slice(2, 8).toUpperCase();
@@ -29,7 +29,7 @@ export function Home() {
     setCreateLoading(true);
     setCreateError('');
     try {
-      const snippet = await api.createSnippet({ id: roomId.trim() });
+      const snippet = await snippetService.createSnippet({ id: roomId.trim() });
       navigate(`/s/${snippet.id}`, { state: { name: createName.trim() } });
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : 'Failed to create room.');
@@ -45,7 +45,7 @@ export function Home() {
     setJoinLoading(true);
     setJoinError('');
     try {
-      await api.getSnippet(joinRoomId.trim());
+      await snippetService.getSnippet(joinRoomId.trim());
       navigate(`/s/${joinRoomId.trim()}`, { state: { name: joinName.trim() } });
     } catch {
       setJoinError('Room not found. Check the ID and try again.');

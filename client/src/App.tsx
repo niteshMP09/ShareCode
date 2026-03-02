@@ -1,7 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import { Navbar } from './components';
-import { Home } from './pages/Home';
-import { SnippetPage } from './pages/SnippetPage';
+import { Home, SnippetPage } from './pages';
 
 function App() {
   return (

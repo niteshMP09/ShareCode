@@ -4,13 +4,7 @@ import type { Snippet } from '@/types/snippet';
 import { LoadingState, EmptyState, NamePrompt } from '@/components';
 import { useSocket } from '@/hooks';
 import { snippetService } from '@/services';
-
-function typingText(users: string[]): string {
-  if (users.length === 0) return '';
-  if (users.length === 1) return `${users[0]} is typing…`;
-  if (users.length === 2) return `${users[0]} and ${users[1]} are typing…`;
-  return `${users[0]}, ${users[1]} and others are typing…`;
-}
+import { typingText } from '@/utils/typingText';
 
 export function SnippetPage() {
   const { id } = useParams<{ id: string }>();

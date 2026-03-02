@@ -9,13 +9,11 @@ export function useHome() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<HomeMode>(HomeMode.Create);
 
-  // Create form state
   const [createName, setCreateName] = useState('');
   const [roomId, setRoomId] = useState(generateId);
   const [createLoading, setCreateLoading] = useState(false);
   const [createError, setCreateError] = useState('');
 
-  // Join form state
   const [joinName, setJoinName] = useState('');
   const [joinRoomId, setJoinRoomId] = useState('');
   const [joinLoading, setJoinLoading] = useState(false);

@@ -1,19 +1,6 @@
 import { Server, Socket } from 'socket.io';
 import { SnippetService } from '../services/snippet.service';
-
-interface JoinPayload {
-  snippetId: string;
-  name: string;
-}
-
-interface ContentChangePayload {
-  snippetId: string;
-  content: string;
-}
-
-interface TypingPayload {
-  snippetId: string;
-}
+import type { JoinPayload, ContentChangePayload, TypingPayload } from '../types/socket';
 
 // roomId -> Map<socketId, displayName>
 const rooms = new Map<string, Map<string, string>>();

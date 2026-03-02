@@ -1,9 +1,5 @@
-import type {
-  Snippet,
-  CreateSnippetPayload,
-  UpdateSnippetPayload,
-} from '../types/snippet';
-import { apiClient } from './clientApi';
+import type { Snippet, CreateSnippetPayload, UpdateSnippetPayload } from '@/types/snippet';
+import { apiClient } from '@/services/clientApi';
 
 export const snippetService = {
   createSnippet: (data: CreateSnippetPayload) =>

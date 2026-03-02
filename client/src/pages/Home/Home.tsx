@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { snippetService } from '../../services/snippetService';
-import { Button } from '../../components';
+import { snippetService } from '@/services/snippetService';
+import { Button } from '@/components';
 
 function generateId() {
   return Math.random().toString(36).slice(2, 8).toUpperCase();

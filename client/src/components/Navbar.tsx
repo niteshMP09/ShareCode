@@ -8,7 +8,7 @@ export function Navbar() {
     <nav className="h-14 bg-white border-b border-gray-200 px-6 flex items-center justify-between shrink-0">
       <Link to="/" className="flex items-center gap-2 select-none">
         <span className="text-indigo-600 font-bold text-xl">✦</span>
-        <span className="text-gray-900 font-semibold text-lg tracking-tight">TextShare</span>
+        <span className="text-gray-900 font-semibold text-lg tracking-tight">ShareCode</span>
       </Link>
       {!isHome && (
         <Link

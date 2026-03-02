@@ -1,15 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { snippetService } from '@/services/snippetService';
-import { Button } from '@/components';
-
-function generateId() {
-  return Math.random().toString(36).slice(2, 8).toUpperCase();
-}
+import { Button, TabToggle } from '@/components';
+import { generateId } from '@/utils/generateId';
+import { HomeMode } from '@/types/home';
 
 export function Home() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<'create' | 'join'>('create');
+  const [mode, setMode] = useState<HomeMode>(HomeMode.Create);
 
   // Create form state
   const [createName, setCreateName] = useState('');
@@ -62,32 +60,16 @@ export function Home() {
           <h2 className="text-2xl font-bold text-gray-900">Get started</h2>
           <p className="text-gray-500 text-sm mt-1">Create a room or join an existing one</p>
         </div>
-
-        {/* Tab toggle */}
-        <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-6">
-          <Button
-            onClick={() => setMode('create')}
-            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
-              mode === 'create'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Create a Room
-          </Button>
-          <Button
-            onClick={() => setMode('join')}
-            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
-              mode === 'join'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Join a Room
-          </Button>
-        </div>
-
-        {mode === 'create' ? (
+        <TabToggle
+          value={mode}
+          onChange={setMode}
+          className="mb-6"
+          options={[
+            { label: 'Create a Room', value: HomeMode.Create },
+            { label: 'Join a Room', value: HomeMode.Join },
+          ]}
+        />
+        {mode === HomeMode.Create ? (
           <form onSubmit={handleCreate} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">

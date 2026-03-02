@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { snippetService } from '@/services/snippetService';
-import { Button, TabToggle } from '@/components';
+import { CreateRoom, JoinRoom, TabToggle } from '@/components';
 import { generateId } from '@/utils/generateId';
 import { HomeMode } from '@/types/home';
 
@@ -70,86 +70,26 @@ export function Home() {
           ]}
         />
         {mode === HomeMode.Create ? (
-          <form onSubmit={handleCreate} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Your name
-              </label>
-              <input
-                type="text"
-                value={createName}
-                onChange={(e) => setCreateName(e.target.value)}
-                placeholder="e.g. Alice"
-                autoFocus
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Room ID
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={roomId}
-                  onChange={(e) => setRoomId(e.target.value.toUpperCase())}
-                  placeholder="e.g. BLUE42"
-                  className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-mono outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                />
-                <Button
-                  type="button"
-                  onClick={() => setRoomId(generateId())}
-                  className="px-3 py-2 text-xs text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-xl transition whitespace-nowrap"
-                >
-                  Generate
-                </Button>
-              </div>
-            </div>
-            {createError && <p className="text-red-500 text-xs">{createError}</p>}
-            <Button
-              type="submit"
-              disabled={createLoading}
-              className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-colors"
-            >
-              {createLoading ? 'Creating…' : 'Create Room'}
-            </Button>
-          </form>
+          <CreateRoom
+            name={createName}
+            roomId={roomId}
+            loading={createLoading}
+            error={createError}
+            onNameChange={setCreateName}
+            onRoomIdChange={(value) => setRoomId(value.toUpperCase())}
+            onGenerateId={() => setRoomId(generateId())}
+            onSubmit={handleCreate}
+          />
         ) : (
-          <form onSubmit={handleJoin} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Your name
-              </label>
-              <input
-                type="text"
-                value={joinName}
-                onChange={(e) => setJoinName(e.target.value)}
-                placeholder="e.g. Bob"
-                autoFocus
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Room ID
-              </label>
-              <input
-                type="text"
-                value={joinRoomId}
-                onChange={(e) => setJoinRoomId(e.target.value.toUpperCase())}
-                placeholder="e.g. BLUE42"
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-mono outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-              />
-            </div>
-            {joinError && <p className="text-red-500 text-xs">{joinError}</p>}
-            <Button
-              type="submit"
-              disabled={joinLoading}
-              className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-colors"
-            >
-              {joinLoading ? 'Joining…' : 'Join Room'}
-            </Button>
-          </form>
+          <JoinRoom
+            name={joinName}
+            roomId={joinRoomId}
+            loading={joinLoading}
+            error={joinError}
+            onNameChange={setJoinName}
+            onRoomIdChange={(value) => setJoinRoomId(value.toUpperCase())}
+            onSubmit={handleJoin}
+          />
         )}
       </div>
     </div>

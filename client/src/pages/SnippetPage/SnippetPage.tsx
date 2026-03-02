@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import type { Snippet } from '@/types/snippet';
-import { Button } from '@/components';
+import { LoadingState, EmptyState, Button } from '@/components';
 import { useSocket } from '@/hooks';
 import { snippetService } from '@/services';
 
@@ -118,26 +118,18 @@ export function SnippetPage() {
     );
   }
 
-  // ── Loading / error ───────────────────────────────────────────────────────
+
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-[calc(100vh-56px)] bg-white">
-        <span className="text-gray-400 text-sm">Loading…</span>
-      </div>
-    );
+    return <LoadingState />;
   }
 
   if (error || !snippet) {
     return (
-      <div className="flex flex-col items-center justify-center h-[calc(100vh-56px)] bg-white gap-4">
-        <p className="text-gray-500">{error || 'Room not found.'}</p>
-        <Button
-          onClick={() => navigate('/')}
-          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg transition-colors"
-        >
-          Go Home
-        </Button>
-      </div>
+      <EmptyState
+        message={error || 'Room not found.'}
+        actionLabel="Go Home"
+        onAction={() => navigate('/')}
+      />
     );
   }
 

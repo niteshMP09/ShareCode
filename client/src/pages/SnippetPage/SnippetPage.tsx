@@ -1,9 +1,9 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { useSocket } from '../../hooks/useSocket';
 import type { Snippet } from '../../types/snippet';
 import { Button } from '../../components';
-import { snippetService } from '../../services/snippetService';
+import { useSocket } from '../../hooks';
+import { snippetService } from '../../services';
 
 function typingText(users: string[]): string {
   if (users.length === 0) return '';

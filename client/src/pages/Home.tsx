@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { snippetService } from '../services/snippetService';
+import { Button } from '../components';
 
 function generateId() {
   return Math.random().toString(36).slice(2, 8).toUpperCase();
@@ -64,7 +65,7 @@ export function Home() {
 
         {/* Tab toggle */}
         <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-6">
-          <button
+          <Button
             onClick={() => setMode('create')}
             className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
               mode === 'create'
@@ -73,8 +74,8 @@ export function Home() {
             }`}
           >
             Create a Room
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => setMode('join')}
             className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
               mode === 'join'
@@ -83,7 +84,7 @@ export function Home() {
             }`}
           >
             Join a Room
-          </button>
+          </Button>
         </div>
 
         {mode === 'create' ? (
@@ -113,23 +114,23 @@ export function Home() {
                   placeholder="e.g. BLUE42"
                   className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-mono outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                 />
-                <button
+                <Button
                   type="button"
                   onClick={() => setRoomId(generateId())}
                   className="px-3 py-2 text-xs text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-xl transition whitespace-nowrap"
                 >
                   Generate
-                </button>
+                </Button>
               </div>
             </div>
             {createError && <p className="text-red-500 text-xs">{createError}</p>}
-            <button
+            <Button
               type="submit"
               disabled={createLoading}
               className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-colors"
             >
               {createLoading ? 'Creating…' : 'Create Room'}
-            </button>
+            </Button>
           </form>
         ) : (
           <form onSubmit={handleJoin} className="space-y-4">
@@ -159,13 +160,13 @@ export function Home() {
               />
             </div>
             {joinError && <p className="text-red-500 text-xs">{joinError}</p>}
-            <button
+            <Button
               type="submit"
               disabled={joinLoading}
               className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-colors"
             >
               {joinLoading ? 'Joining…' : 'Join Room'}
-            </button>
+            </Button>
           </form>
         )}
       </div>

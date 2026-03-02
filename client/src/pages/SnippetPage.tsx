@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useSocket } from '../hooks/useSocket';
 import type { Snippet } from '../types/snippet';
+import { Button } from '../components';
 import { snippetService } from '../services/snippetService';
 
 function typingText(users: string[]): string {
@@ -105,12 +106,12 @@ export function SnippetPage() {
               autoFocus
               className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
             />
-            <button
+            <Button
               type="submit"
               className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-xl transition-colors"
             >
               Join
-            </button>
+            </Button>
           </form>
         </div>
       </div>
@@ -130,12 +131,12 @@ export function SnippetPage() {
     return (
       <div className="flex flex-col items-center justify-center h-[calc(100vh-56px)] bg-white gap-4">
         <p className="text-gray-500">{error || 'Room not found.'}</p>
-        <button
+        <Button
           onClick={() => navigate('/')}
           className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg transition-colors"
         >
           Go Home
-        </button>
+        </Button>
       </div>
     );
   }

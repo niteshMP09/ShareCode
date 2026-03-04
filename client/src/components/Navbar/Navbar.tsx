@@ -29,6 +29,7 @@ export function Navbar() {
   const isHome = pathname === '/';
   const [copied, setCopied] = useState(false);
   const [copiedContent, setCopiedContent] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const { snippetContent } = useNavbar();
 
   const lines = snippetContent !== null ? snippetContent.split('\n').length : 0;
@@ -39,21 +40,24 @@ export function Navbar() {
     await navigator.clipboard.writeText(snippetContent);
     setCopiedContent(true);
     setTimeout(() => setCopiedContent(false), 2000);
+    setMenuOpen(false);
   };
 
   const handleShare = async () => {
     const url = window.location.href;
     if (navigator.share) {
       await navigator.share({ title: 'ShareCode', url });
+      setMenuOpen(false);
       return;
     }
     await navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+    setMenuOpen(false);
   };
 
   return (
-    <nav className="h-14 bg-white border-b border-gray-200 px-6 flex items-center justify-between shrink-0">
+    <nav className="relative h-14 bg-white border-b border-gray-200 px-6 flex items-center justify-between shrink-0">
       <div className="flex items-center gap-3">
         <Link to="/" className="flex items-center gap-2 select-none">
           <span className="text-indigo-600 font-bold text-xl">✦</span>
@@ -64,34 +68,88 @@ export function Navbar() {
         )}
       </div>
       {!isHome && (
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Button
-              type="button"
-              onClick={handleCopy}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium"
-            >
-              <CopyIcon />
-              {copiedContent ? 'Copied!' : 'Copy'}
-            </Button>
-          </div>
-          <div className="relative">
-            <Button
-              type="button"
-              onClick={handleShare}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium"
-            >
-              <ShareIcon />
-              {copied ? 'Copied!' : 'Share'}
-            </Button>
-          </div>
-          <Link
-            to="/"
-            className="flex items-center gap-1 px-4 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium"
+        <>
+          {/* mobile menu button */}
+          <button
+            onClick={() => setMenuOpen((open) => !open)}
+            className="md:hidden p-2 rounded-md text-gray-600 hover:bg-gray-100"
+            aria-label="Toggle menu"
           >
-            + New
-          </Link>
-        </div>
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
+
+          {/* desktop actions */}
+          <div className="hidden md:flex items-center gap-2">
+            <div className="relative">
+              <Button
+                type="button"
+                onClick={handleCopy}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium"
+              >
+                <CopyIcon />
+                {copiedContent ? 'Copied!' : 'Copy'}
+              </Button>
+            </div>
+            <div className="relative">
+              <Button
+                type="button"
+                onClick={handleShare}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium"
+              >
+                <ShareIcon />
+                {copied ? 'Copied!' : 'Share'}
+              </Button>
+            </div>
+            <Link
+              to="/"
+              className="flex items-center gap-1 px-4 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium"
+            >
+              + New
+            </Link>
+          </div>
+
+          {/* mobile dropdown */}
+          {menuOpen && (
+            <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg flex flex-col w-40 z-10">
+              <button
+                type="button"
+                onClick={handleCopy}
+                className="flex items-center gap-1.5 px-3 py-2 text-sm bg-white hover:bg-gray-50 text-gray-700 rounded-t-lg"
+              >
+                <CopyIcon />
+                {copiedContent ? 'Copied!' : 'Copy'}
+              </button>
+              <button
+                type="button"
+                onClick={handleShare}
+                className="flex items-center gap-1.5 px-3 py-2 text-sm bg-white hover:bg-gray-50 text-gray-700"
+              >
+                <ShareIcon />
+                {copied ? 'Copied!' : 'Share'}
+              </button>
+              <Link
+                to="/"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-1 px-3 py-2 text-sm bg-white hover:bg-gray-50 text-gray-700 rounded-b-lg"
+              >
+                + New
+              </Link>
+            </div>
+          )}
+        </>
       )}
     </nav>
   );

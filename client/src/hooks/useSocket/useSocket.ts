@@ -24,8 +24,14 @@ export function useSocket(
   useEffect(() => {
     if (!snippetId || !name) return;
 
-    const socket = io({ transports: ['websocket', 'polling'] });
+    // determine the socket server URL from env; fall back to current origin
+    const serverUrl = import.meta.env.VITE_API_BASE_URL || '';
+    const socket = io(serverUrl, { transports: ['websocket', 'polling'] });
     socketRef.current = socket;
+
+    socket.on('connect_error', (err) => {
+      console.error('[ws] connection error', err);
+    });
 
     socket.emit('join', { snippetId, name });
     socket.on('content:update', (data: UpdatePayload) => onUpdateRef.current(data));
